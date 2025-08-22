@@ -8,6 +8,7 @@
     "scheme": "dailybite",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "entryPoint": "./index.ts",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lincolnaisagbonhi.dailybitefunfacts"
