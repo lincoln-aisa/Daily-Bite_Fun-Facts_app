@@ -42,12 +42,6 @@
           "androidAppId": "ca-app-pub-4432871597544432~6939277353",
           "iosAppId": "ca-app-pub-4432871597544432~6939277353"
         }
-      ],
-      [
-        "@react-native-firebase/app",
-        {
-          "projectId": "daily-bite-fun-facts"
-        }
       ]
     ],
     "experiments": {
