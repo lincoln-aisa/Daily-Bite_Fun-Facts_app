@@ -111,6 +111,8 @@ async def create_or_update_user(user_data: User):
                 {"uid": user_data.uid},
                 {"$set": {"last_active": datetime.utcnow()}}
             )
+            # Remove MongoDB ObjectId for JSON serialization
+            existing_user['_id'] = str(existing_user['_id'])
             return {"success": True, "message": "User updated", "user": existing_user}
         else:
             # Create new user
