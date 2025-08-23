@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lincolnaisagbonhi.dailybitefunfacts"
+      "bundleIdentifier": "com.dailybitefunfacts"
     },
     "extra": {
       "eas": {
