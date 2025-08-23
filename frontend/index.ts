@@ -1,4 +1,6 @@
+console.log("ENTRY: index.ts executing");
+import { registerRootComponent } from "expo";
 import App from "./App";
-import { AppRegistry } from 'react-native';
 
-AppRegistry.registerComponent('main', () => App);
+console.log("ENTRY: registerRootComponent being called");
+registerRootComponent(App);
