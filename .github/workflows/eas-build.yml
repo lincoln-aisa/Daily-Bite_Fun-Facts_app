@@ -1,3 +1,4 @@
+# .github/workflows/eas-build.yml
 name: EAS Android APK
 
 on:
@@ -8,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: frontend   # <-- your Expo app folder
 
     steps:
       - name: Checkout code
@@ -18,26 +19,38 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: "yarn"
+          cache-dependency-path: "frontend/yarn.lock"
 
-      - name: Use npm cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            npm-${{ runner.os }}-
+      - name: Enable corepack (Yarn)
+        run: corepack enable
 
-      - name: Install dependencies
+      - name: Install dependencies (Yarn)
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          yarn install --frozen-lockfile --non-interactive || yarn install --non-interactive
 
       - name: Install EAS CLI
-        run: npm install -g eas-cli
+        run: yarn global add eas-cli
 
-      - name: Verify Expo token
+      - name: Verify Expo auth
         run: eas whoami
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Ensure eas.json exists (and set appVersionSource)
+        run: |
+          if [ ! -f eas.json ]; then
+            cat > eas.json <<'JSON'
+            {
+              "cli": { "version": ">= 3.20.0", "appVersionSource": "remote" },
+              "build": {
+                "preview": { "android": { "buildType": "apk" } },
+                "production": { "android": { "gradleCommand": ":app:bundleRelease" } }
+              }
+            }
+            JSON
+            echo "Created eas.json"
+          fi
 
       - name: Build APK (preview)
         run: eas build -p android --profile preview --non-interactive
