@@ -1,7 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 
+console.log("APP MOUNT: App.tsx constructing");
+
 export default function App() {
+  console.log("APP RENDER: App component rendering");
+  
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
