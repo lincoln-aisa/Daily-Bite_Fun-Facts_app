@@ -1,35 +1,45 @@
 name: EAS Build
 
 on:
-  workflow_dispatch:  # allows you to trigger manually in GitHub Actions tab
+  workflow_dispatch:
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend   # <-- your Expo project folder
 
     steps:
-      # Checkout your repo code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Setup Node
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # Install EAS CLI
       - name: Install EAS CLI
         run: npm install -g eas-cli
 
-      # Run APK build (preview profile)
-      - name: Build APK
+      # (Optional) Show where we are
+      - run: pwd && ls -la
+
+      # Ensure this project is linked to an EAS project
+      - name: Verify EAS linkage
+        run: |
+          node -e "const fs=require('fs');const j=require('./app.json');const id=j?.expo?.extra?.eas?.projectId; if(!id){process.exit(2)}"
+        continue-on-error: true
+
+      # If not linked, fail with a clear message
+      - name: Stop if not linked to EAS
+        if: ${{ steps.Verify_EAS_linkage.outcome == 'failure' }}
+        run: |
+          echo "::error::This repo isn't linked to an EAS project. See instructions in job log."
+          exit 1
+
+      - name: Build APK (preview)
         run: eas build -p android --profile preview --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
-      # Run AAB build (production profile, optional)
-      - name: Build AAB
-        run: eas build -p android --profile production --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_DEBUG: "1"
