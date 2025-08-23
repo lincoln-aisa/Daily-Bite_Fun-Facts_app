@@ -12,6 +12,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.lincolnaisagbonhi.dailybitefunfacts"
     },
+    "extra": {
+      "eas": {
+        "projectId": "d48769e7-3660-47bb-8bb0-4ee32f288491"
+      }
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
