@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "876122505639",
+    "project_id": "daily-bite-fun-facts",
+    "storage_bucket": "daily-bite-fun-facts.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:876122505639:android:d3d6e0e1dd8fa4f0f0f682",
+        "android_client_info": {
+          "package_name": "com.lincolnaisagbonhi.dailybitefunfacts"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBst6lUWE-b79IP-q2fq5Wr5BRrpijHVtc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
