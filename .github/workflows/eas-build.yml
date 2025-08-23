@@ -15,10 +15,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Show tree & confirm lockfile location
+        run: |
+          pwd
+          ls -la
+          echo "---- frontend ----"
+          ls -la
+
+      - name: Setup Node.js (Node 20 for @firebase/ai)
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: "yarn"
           cache-dependency-path: "frontend/yarn.lock"
 
