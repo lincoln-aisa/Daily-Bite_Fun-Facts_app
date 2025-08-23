@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Daily Bite: Fun & Facts",
-    "slug": "daily-bite-fun-facts",
+    "slug": "daily-bite-fun-and-facts",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
