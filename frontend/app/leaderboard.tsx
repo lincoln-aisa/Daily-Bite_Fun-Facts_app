@@ -1,15 +1,34 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { getLeaderboard } from '../services/apiService';
+
+type Row = { user_name?: string; score?: number; total_score?: number; rank: number };
 
 export default function LeaderboardPage() {
   const router = useRouter();
-  
-  const leaderboard = [
-    { rank: 1, name: "Alice Johnson", score: 1250 },
-    { rank: 2, name: "Bob Smith", score: 1180 },
-    { rank: 3, name: "You", score: 1120 },
-  ];
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getLeaderboard('today');
+        // Fallback to a friendly shape
+        const normalized: Row[] = (data ?? []).map((r: any) => ({
+          user_name: r.user_name ?? 'Anonymous',
+          score: r.score ?? r.total_score ?? 0,
+          rank: r.rank ?? 0,
+        }));
+        setRows(normalized);
+      } catch (e) {
+        console.log('LEADERBOARD LOAD ERROR', e);
+        setRows([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -21,16 +40,24 @@ export default function LeaderboardPage() {
       </View>
 
       <ScrollView style={styles.content}>
-        {leaderboard.map((player, index) => (
-          <View key={index} style={[styles.playerRow, player.name === "You" && styles.userRow]}>
-            <Text style={styles.rank}>{player.rank === 1 ? "🥇" : player.rank === 2 ? "🥈" : player.rank === 3 ? "🥉" : `${player.rank}th`}</Text>
-            <Text style={[styles.playerName, player.name === "You" && styles.userText]}>{player.name}</Text>
-            <Text style={[styles.score, player.name === "You" && styles.userText]}>{player.score} pts</Text>
-          </View>
-        ))}
+        {loading ? (
+          <ActivityIndicator />
+        ) : rows.length > 0 ? (
+          rows.map((player, index) => (
+            <View key={index} style={styles.playerRow}>
+              <Text style={styles.rank}>
+                {player.rank === 1 ? '🥇' : player.rank === 2 ? '🥈' : player.rank === 3 ? '🥉' : `${player.rank}th`}
+              </Text>
+              <Text style={styles.playerName}>{player.user_name}</Text>
+              <Text style={styles.score}>{player.score} pts</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={{ color: '#a0a0a0' }}>No leaderboard data yet.</Text>
+        )}
       </ScrollView>
-      
-      <View style={styles.tabBar}>
+
+      <View className="tabBar" style={styles.tabBar}>
         <TouchableOpacity style={styles.tab} onPress={() => router.push('/')}>
           <Text style={styles.tabText}>🏠 Home</Text>
         </TouchableOpacity>
@@ -53,11 +80,9 @@ const styles = StyleSheet.create({
   backText: { color: '#ffffff', fontWeight: 'bold' },
   content: { flex: 1, padding: 20 },
   playerRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#16213e', padding: 15, borderRadius: 12, marginBottom: 10 },
-  userRow: { backgroundColor: 'rgba(255, 107, 107, 0.1)', borderWidth: 2, borderColor: '#ff6b6b' },
   rank: { fontSize: 16, fontWeight: 'bold', color: '#f9ca24', width: 50 },
   playerName: { fontSize: 16, color: '#ffffff', flex: 1 },
   score: { fontSize: 14, color: '#4ecdc4', fontWeight: 'bold' },
-  userText: { color: '#ff6b6b' },
   tabBar: { flexDirection: 'row', backgroundColor: '#16213e', paddingVertical: 10 },
   tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
   tabText: { fontSize: 14, color: '#a0a0a0' },
