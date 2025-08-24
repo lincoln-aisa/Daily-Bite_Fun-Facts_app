@@ -1,0 +1,67 @@
+# .github/workflows/eas-build.yml
+name: EAS Android APK
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend   # <-- your Expo app folder
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Show tree & confirm lockfile location
+        run: |
+          pwd
+          ls -la
+          echo "---- frontend ----"
+          ls -la
+
+      - name: Setup Node.js (Node 20 for @firebase/ai)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "yarn"
+          cache-dependency-path: "frontend/yarn.lock"
+
+      - name: Enable corepack (Yarn)
+        run: corepack enable
+
+      - name: Install dependencies (Yarn)
+        run: |
+          yarn install --frozen-lockfile --non-interactive || yarn install --non-interactive
+
+      - name: Install EAS CLI
+        run: yarn global add eas-cli
+
+      - name: Verify Expo auth
+        run: eas whoami
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Ensure eas.json exists (and set appVersionSource)
+        run: |
+          if [ ! -f eas.json ]; then
+            cat > eas.json <<'EOF'
+            {
+              "cli": { "version": ">= 3.20.0", "appVersionSource": "remote" },
+              "build": {
+                "preview": { "android": { "buildType": "apk" } },
+                "production": { "android": { "gradleCommand": ":app:bundleRelease" } }
+              }
+            }
+          EOF
+              echo "Created eas.json"
+            else
+              echo "eas.json already present"
+            fi
+
+      - name: Build APK (preview)
+        run: eas build -p android --profile preview --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
