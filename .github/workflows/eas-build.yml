@@ -61,6 +61,19 @@ jobs:
               echo "eas.json already present"
             fi
 
+      - name: Print .easignore and show native folders
+        run: |
+          echo "----- .easignore -----"
+          if [ -f .easignore ]; then cat .easignore; else echo "(no .easignore found)"; fi
+          echo "----- native dirs -----"
+          ls -la | sed -n '1,200p' || true
+
+      - name: Remove native folders from CI archive (force managed build)
+        run: |
+          rm -rf android ios
+          echo "After removal:"
+          ls -la | sed -n '1,200p'      
+
       - name: Build APK (preview)
         run: eas build -p android --profile preview --non-interactive
         env:
