@@ -1,9 +1,39 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { getHistoryEvents, getFunFact } from '../services/apiService';
 
 export default function HomePage() {
   const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+  const [historyEvents, setHistoryEvents] = useState<Array<{year:string;text:string}>>([]);
+  const [funFact, setFunFact] = useState<{ text: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const today = new Date();
+        const month = today.getMonth() + 1;
+        const day = today.getDate();
+
+        const [history, fact] = await Promise.all([
+          getHistoryEvents(month, day),
+          getFunFact(),
+        ]);
+
+        setHistoryEvents(history ?? []);
+        setFunFact(fact ?? null);
+      } catch (e: any) {
+        console.log('HOME LOAD ERROR', e);
+        setError('Could not load today’s content.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   return (
     <ScrollView style={styles.container}>
@@ -15,28 +45,46 @@ export default function HomePage() {
         </View>
       </View>
 
+      {loading && (
+        <View style={{ padding: 20, alignItems: 'center' }}>
+          <ActivityIndicator />
+          <Text style={{ color: '#a0a0a0', marginTop: 8 }}>Loading…</Text>
+        </View>
+      )}
+
+      {error && (
+        <View style={{ paddingHorizontal: 20 }}>
+          <Text style={{ color: '#ff6b6b' }}>{error}</Text>
+        </View>
+      )}
+
+      {/* This Day in History (live) */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📖 This Day in History</Text>
-        <View style={styles.card}>
-          <Text style={styles.year}>1969</Text>
-          <Text style={styles.eventText}>
-            Apollo 11 successfully lands on the Moon, making Neil Armstrong and Buzz Aldrin the first humans to walk on the lunar surface.
-          </Text>
-        </View>
+        {(historyEvents ?? []).slice(0, 3).map((ev, idx) => (
+          <View key={idx} style={styles.card}>
+            <Text style={styles.year}>{ev.year}</Text>
+            <Text style={styles.eventText}>{ev.text}</Text>
+          </View>
+        ))}
+        {!loading && historyEvents.length === 0 && (
+          <Text style={{ color: '#a0a0a0' }}>No events found today.</Text>
+        )}
       </View>
 
+      {/* Fun Fact (live) */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>💡 Fun Fact of the Day</Text>
         <View style={styles.factCard}>
           <Text style={styles.factText}>
-            Did you know? Octopuses have three hearts and blue blood!
+            {funFact?.text ?? (loading ? '' : 'No fun fact available.')}
           </Text>
         </View>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>🧩 Daily Puzzle</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.puzzleButton}
           onPress={() => router.push('/puzzle')}
         >
