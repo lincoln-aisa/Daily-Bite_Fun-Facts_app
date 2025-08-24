@@ -48,18 +48,18 @@ jobs:
         run: |
           if [ ! -f eas.json ]; then
             cat > eas.json <<'EOF'
-            {
-              "cli": { "version": ">= 3.20.0", "appVersionSource": "remote" },
-              "build": {
-                "preview": { "android": { "buildType": "apk" } },
-                "production": { "android": { "gradleCommand": ":app:bundleRelease" } }
-              }
-            }
-          EOF
-              echo "Created eas.json"
-            else
-              echo "eas.json already present"
-            fi
+      {
+        "cli": { "version": ">= 3.20.0", "appVersionSource": "remote" },
+        "build": {
+          "preview": { "android": { "buildType": "apk" } },
+          "production": { "android": { } }
+        }
+      }
+      EOF
+            echo "Created eas.json"
+          else
+            echo "eas.json already present"
+          fi
 
       - name: Build APK (preview)
         run: eas build -p android --profile preview --non-interactive
