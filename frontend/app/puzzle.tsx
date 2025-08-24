@@ -1,23 +1,40 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { getDailyPuzzle } from '../services/apiService';
 
 export default function PuzzlePage() {
   const router = useRouter();
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  
-  const puzzle = {
-    question: "What is the largest planet in our solar system?",
-    answers: ["Jupiter", "Saturn", "Earth", "Mars"],
-    correctAnswer: "Jupiter"
-  };
+  const [loading, setLoading] = useState(true);
+  const [puzzle, setPuzzle] = useState<{question:string;answers:string[];correctAnswer:string} | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
-  const handleAnswerSelect = (answer) => {
+  useEffect(() => {
+    (async () => {
+      try {
+        const q = await getDailyPuzzle();
+        setPuzzle(q);
+      } catch (e) {
+        console.log('PUZZLE LOAD ERROR', e);
+        setPuzzle({
+          question: 'What is the largest planet in our solar system?',
+          correctAnswer: 'Jupiter',
+          answers: ['Jupiter', 'Saturn', 'Earth', 'Mars'],
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const handleAnswerSelect = (answer: string) => {
+    if (!puzzle) return;
     setSelectedAnswer(answer);
     if (answer === puzzle.correctAnswer) {
-      Alert.alert("Correct! 🎉", "You earned 100 points!");
+      Alert.alert('Correct! 🎉', 'You earned 100 points!');
+      // TODO: optionally call submitPuzzleScore(userId, 100, timeTaken)
     } else {
-      Alert.alert("Wrong Answer 😔", `The correct answer was ${puzzle.correctAnswer}`);
+      Alert.alert('Wrong Answer 😔', `The correct answer was ${puzzle.correctAnswer}`);
     }
   };
 
@@ -31,20 +48,25 @@ export default function PuzzlePage() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.question}>{puzzle.question}</Text>
-        
-        {puzzle.answers.map((answer, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.answerButton,
-              selectedAnswer === answer && styles.selectedAnswer
-            ]}
-            onPress={() => handleAnswerSelect(answer)}
-          >
-            <Text style={styles.answerText}>{answer}</Text>
-          </TouchableOpacity>
-        ))}
+        {loading ? (
+          <ActivityIndicator />
+        ) : (
+          <>
+            <Text style={styles.question}>{puzzle?.question}</Text>
+            {(puzzle?.answers ?? []).map((answer, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={[
+                  styles.answerButton,
+                  selectedAnswer === answer && styles.selectedAnswer
+                ]}
+                onPress={() => handleAnswerSelect(answer)}
+              >
+                <Text style={styles.answerText}>{answer}</Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
       </View>
     </View>
   );
