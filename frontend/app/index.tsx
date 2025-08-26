@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getHistoryEvents, getFunFact } from '../services/apiService';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 export default function HomePage() {
   const router = useRouter();
 
+  const BANNER_ID = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID || TestIds.BANNER;
   const [loading, setLoading] = useState(true);
   const [historyEvents, setHistoryEvents] = useState<Array<{year:string;text:string}>>([]);
   const [funFact, setFunFact] = useState<{ text: string } | null>(null);
@@ -102,6 +104,11 @@ export default function HomePage() {
         <TouchableOpacity style={styles.tab} onPress={() => router.push('/profile')}>
           <Text style={styles.tabText}>👤 Profile</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Banner Ad */}
+      <View style={{ alignItems: 'center', marginBottom: 12 }}>
+        <BannerAd unitId={BANNER_ID} size={BannerAdSize.BANNER} />
       </View>
     </ScrollView>
   );
