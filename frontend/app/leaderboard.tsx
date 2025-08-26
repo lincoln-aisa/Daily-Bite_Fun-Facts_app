@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getLeaderboard } from '../services/apiService';
+import { AdMobBanner } from 'react-native-google-mobile-ads';
 
 type Row = { user_name?: string; score?: number; total_score?: number; rank: number };
 
@@ -39,7 +40,7 @@ export default function LeaderboardPage() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 160 }}>
         {loading ? (
           <ActivityIndicator />
         ) : rows.length > 0 ? (
@@ -56,6 +57,16 @@ export default function LeaderboardPage() {
           <Text style={{ color: '#a0a0a0' }}>No leaderboard data yet.</Text>
         )}
       </ScrollView>
+
+      {/* 📌 Big banner ad */}
+      <View style={{ alignItems: 'center', marginVertical: 10 }}>
+        <AdMobBanner
+          adUnitID="ca-app-pub-3940256099942544/6300978111" // Test banner ID
+          bannerSize="mediumRectangle" // <- bigger than normal banner
+          servePersonalizedAds={true}
+          onDidFailToReceiveAdWithError={(err) => console.log('Ad error', err)}
+        />
+      </View>
 
       <View className="tabBar" style={styles.tabBar}>
         <TouchableOpacity style={styles.tab} onPress={() => router.push('/')}>
@@ -78,7 +89,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', color: '#ffffff' },
   backButton: { backgroundColor: '#45b7d1', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   backText: { color: '#ffffff', fontWeight: 'bold' },
-  content: { flex: 1, padding: 20 },
+  content: { flex: 1, padding: 20, paddingBottom: 120 },
   playerRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#16213e', padding: 15, borderRadius: 12, marginBottom: 10 },
   rank: { fontSize: 16, fontWeight: 'bold', color: '#f9ca24', width: 50 },
   playerName: { fontSize: 16, color: '#ffffff', flex: 1 },
