@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getLeaderboard } from '../services/apiService';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+const BANNER_ID = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID || TestIds.BANNER;
 
 type Row = { user_name?: string; score?: number; total_score?: number; rank: number };
 
@@ -14,7 +17,6 @@ export default function LeaderboardPage() {
     (async () => {
       try {
         const data = await getLeaderboard('today');
-        // Fallback to a friendly shape
         const normalized: Row[] = (data ?? []).map((r: any) => ({
           user_name: r.user_name ?? 'Anonymous',
           score: r.score ?? r.total_score ?? 0,
@@ -39,7 +41,7 @@ export default function LeaderboardPage() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 160 }}>
         {loading ? (
           <ActivityIndicator />
         ) : rows.length > 0 ? (
@@ -57,16 +59,22 @@ export default function LeaderboardPage() {
         )}
       </ScrollView>
 
-      <View className="tabBar" style={styles.tabBar}>
-        <TouchableOpacity style={styles.tab} onPress={() => router.push('/')}>
-          <Text style={styles.tabText}>🏠 Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab}>
-          <Text style={styles.activeTabText}>🏆 Leaderboard</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab} onPress={() => router.push('/profile')}>
-          <Text style={styles.tabText}>👤 Profile</Text>
-        </TouchableOpacity>
+      {/* Fixed bottom: banner above tabs */}
+      <View style={styles.bottomArea}>
+        <View style={{ alignItems: 'center', marginBottom: 6 }}>
+          <BannerAd unitId={BANNER_ID} size={BannerAdSize.LARGE_BANNER} />
+        </View>
+        <View style={styles.tabBar}>
+          <TouchableOpacity style={styles.tab} onPress={() => router.replace('/')}>
+            <Text style={styles.tabText}>🏠 Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, styles.tabActive]}>
+            <Text style={[styles.tabText, styles.tabTextActive]}>🏆 Leaderboard</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tab} onPress={() => router.replace('/profile')}>
+            <Text style={styles.tabText}>👤 Profile</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -78,13 +86,24 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', color: '#ffffff' },
   backButton: { backgroundColor: '#45b7d1', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   backText: { color: '#ffffff', fontWeight: 'bold' },
+
   content: { flex: 1, padding: 20 },
+
   playerRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#16213e', padding: 15, borderRadius: 12, marginBottom: 10 },
   rank: { fontSize: 16, fontWeight: 'bold', color: '#f9ca24', width: 50 },
   playerName: { fontSize: 16, color: '#ffffff', flex: 1 },
   score: { fontSize: 14, color: '#4ecdc4', fontWeight: 'bold' },
-  tabBar: { flexDirection: 'row', backgroundColor: '#16213e', paddingVertical: 10 },
-  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-  tabText: { fontSize: 14, color: '#a0a0a0' },
-  activeTabText: { fontSize: 14, color: '#ffffff', fontWeight: 'bold' },
+
+  bottomArea: {
+    position: 'absolute', left: 0, right: 0, bottom: 0,
+    backgroundColor: '#0f1626', paddingTop: 6,
+  },
+  tabBar: {
+    flexDirection: 'row', backgroundColor: '#16213e',
+    paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#0f3460',
+  },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center' },
+  tabText: { fontSize: 12, color: '#a0a0a0' },
+  tabActive: { backgroundColor: '#273c75' },
+  tabTextActive: { color: '#fff', fontWeight: 'bold' },
 });
