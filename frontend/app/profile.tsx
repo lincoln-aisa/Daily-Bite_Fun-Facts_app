@@ -49,6 +49,29 @@ export default function ProfilePage() {
           <Text style={{ color: '#a0a0a0' }}>No stats yet. Play a puzzle!</Text>
         )}
       </ScrollView>
+
+      {/* 📌 Big banner ad */}
+      <View style={{ alignItems: 'center', marginVertical: 10 }}>
+        <AdMobBanner
+          adUnitID="ca-app-pub-3940256099942544/6300978111" // Test banner ID
+          bannerSize="mediumRectangle"
+          servePersonalizedAds={true}
+          onDidFailToReceiveAdWithError={(err) => console.log('Ad error', err)}
+        />
+      </View>
+
+      {/* Bottom navigation */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity style={styles.tab} onPress={() => router.push('/')}>
+          <Text style={styles.tabText}>🏠 Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tab}>
+          <Text style={styles.activeTabText}>🏆 Leaderboard</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tab} onPress={() => router.push('/profile')}>
+          <Text style={styles.tabText}>👤 Profile</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -59,7 +82,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', color: '#ffffff' },
   backButton: { backgroundColor: '#45b7d1', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   backText: { color: '#ffffff', fontWeight: 'bold' },
-  content: { flex: 1, padding: 20 },
+  content: { flex: 1, padding: 20, paddingBottom: 120 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   statBox: { backgroundColor: '#16213e', padding: 16, borderRadius: 12, alignItems: 'center', flex: 1, marginHorizontal: 4 },
   statNumber: { fontSize: 20, fontWeight: 'bold', color: '#4ecdc4' },
