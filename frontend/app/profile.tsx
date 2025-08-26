@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useRouter } from 'expo-router';
 import { auth } from '../services/firebase';
 import { getUserStats } from '../services/apiService';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+
+const BANNER_ID = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID || TestIds.BANNER;
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -12,12 +15,22 @@ export default function ProfilePage() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const uid = auth.currentUser?.uid || 'demo_user';
-      const data = await getUserStats(uid);
-      if (mounted) { setStats(data); setLoading(false); }
+      try {
+        const uid = auth.currentUser?.uid || 'demo_user';
+        const data = await getUserStats(uid);
+        if (mounted) setStats(data || null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     })();
     return () => { mounted = false; };
   }, []);
+
+  const streak = stats?.streak ?? 0;
+  const totalPoints = stats?.total_points ?? 0;
+  const totalGames = stats?.total_games ?? 0;
+  const best = stats?.best_score ?? 0;
+  const rate = stats?.success_rate ?? 0;
 
   return (
     <View style={styles.container}>
@@ -28,21 +41,30 @@ export default function ProfilePage() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 160 }}>
         {loading ? (
           <ActivityIndicator />
         ) : stats ? (
           <>
             <View style={styles.statsRow}>
-              <View style={styles.statBox}><Text style={styles.statNumber}>{stats.streak}</Text><Text style={styles.statLabel}>Day Streak</Text></View>
-              <View style={styles.statBox}><Text style={styles.statNumber}>{stats.total_points}</Text><Text style={styles.statLabel}>Total Points</Text></View>
-              <View style={styles.statBox}><Text style={styles.statNumber}>{stats.total_games}</Text><Text style={styles.statLabel}>Puzzles</Text></View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{streak}</Text>
+                <Text style={styles.statLabel}>Day Streak</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{totalPoints}</Text>
+                <Text style={styles.statLabel}>Total Points</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{totalGames}</Text>
+                <Text style={styles.statLabel}>Puzzles</Text>
+              </View>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>🏆 Highlights</Text>
-              <Text style={{ color: '#fff', marginBottom: 6 }}>Best Score: {stats.best_score}</Text>
-              <Text style={{ color: '#fff' }}>Success Rate: {stats.success_rate}%</Text>
+              <Text style={{ color: '#fff', marginBottom: 6 }}>Best Score: {best}</Text>
+              <Text style={{ color: '#fff' }}>Success Rate: {rate}%</Text>
             </View>
           </>
         ) : (
@@ -50,27 +72,22 @@ export default function ProfilePage() {
         )}
       </ScrollView>
 
-      {/* 📌 Big banner ad */}
-      <View style={{ alignItems: 'center', marginVertical: 10 }}>
-        <AdMobBanner
-          adUnitID="ca-app-pub-3940256099942544/6300978111" // Test banner ID
-          bannerSize="mediumRectangle"
-          servePersonalizedAds={true}
-          onDidFailToReceiveAdWithError={(err) => console.log('Ad error', err)}
-        />
-      </View>
-
-      {/* Bottom navigation */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tab} onPress={() => router.push('/')}>
-          <Text style={styles.tabText}>🏠 Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab}>
-          <Text style={styles.activeTabText}>🏆 Leaderboard</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab} onPress={() => router.push('/profile')}>
-          <Text style={styles.tabText}>👤 Profile</Text>
-        </TouchableOpacity>
+      {/* Fixed bottom: banner above tabs */}
+      <View style={styles.bottomArea}>
+        <View style={{ alignItems: 'center', marginBottom: 6 }}>
+          <BannerAd unitId={BANNER_ID} size={BannerAdSize.LARGE_BANNER} />
+        </View>
+        <View style={styles.tabBar}>
+          <TouchableOpacity style={styles.tab} onPress={() => router.replace('/')}>
+            <Text style={styles.tabText}>🏠 Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, styles.tabActive]}>
+            <Text style={[styles.tabText, styles.tabTextActive]}>🏆 Leaderboard</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tab} onPress={() => router.replace('/profile')}>
+            <Text style={styles.tabText}>👤 Profile</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -82,11 +99,27 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', color: '#ffffff' },
   backButton: { backgroundColor: '#45b7d1', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   backText: { color: '#ffffff', fontWeight: 'bold' },
-  content: { flex: 1, padding: 20, paddingBottom: 120 },
+
+  content: { flex: 1, padding: 20 },
+
   statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   statBox: { backgroundColor: '#16213e', padding: 16, borderRadius: 12, alignItems: 'center', flex: 1, marginHorizontal: 4 },
   statNumber: { fontSize: 20, fontWeight: 'bold', color: '#4ecdc4' },
   statLabel: { fontSize: 12, color: '#a0a0a0', marginTop: 4 },
+
   section: { marginTop: 20 },
   sectionTitle: { fontSize: 18, color: '#fff', marginBottom: 8, fontWeight: '600' },
+
+  bottomArea: {
+    position: 'absolute', left: 0, right: 0, bottom: 0,
+    backgroundColor: '#0f1626', paddingTop: 6,
+  },
+  tabBar: {
+    flexDirection: 'row', backgroundColor: '#16213e',
+    paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#0f3460',
+  },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center' },
+  tabText: { fontSize: 12, color: '#a0a0a0' },
+  tabActive: { backgroundColor: '#273c75' },
+  tabTextActive: { color: '#fff', fontWeight: 'bold' },
 });
