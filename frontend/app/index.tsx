@@ -4,27 +4,23 @@ import { useRouter } from 'expo-router';
 import { getHistoryEvents, getFunFact } from '../services/apiService';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
+const BANNER_ID = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID || TestIds.BANNER;
+
 export default function HomePage() {
   const router = useRouter();
 
-  const BANNER_ID = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID || TestIds.BANNER;
   const [loading, setLoading] = useState(true);
   const [historyEvents, setHistoryEvents] = useState<Array<{year:string;text:string}>>([]);
   const [funFact, setFunFact] = useState<{ text: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const load = async () => {
+    (async () => {
       try {
         const today = new Date();
         const month = today.getMonth() + 1;
         const day = today.getDate();
-
-        const [history, fact] = await Promise.all([
-          getHistoryEvents(month, day),
-          getFunFact(),
-        ]);
-
+        const [history, fact] = await Promise.all([ getHistoryEvents(month, day), getFunFact() ]);
         setHistoryEvents(history ?? []);
         setFunFact(fact ?? null);
       } catch (e: any) {
@@ -33,84 +29,83 @@ export default function HomePage() {
       } finally {
         setLoading(false);
       }
-    };
-    load();
+    })();
   }, []);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>📚 Daily Bite: Fun & Facts</Text>
-        <Text style={styles.subtitle}>Your daily dose of history, facts & puzzles!</Text>
-        <View style={styles.streakBadge}>
-          <Text style={styles.streakText}>🔥 5-day streak</Text>
-        </View>
-      </View>
-
-      {loading && (
-        <View style={{ padding: 20, alignItems: 'center' }}>
-          <ActivityIndicator />
-          <Text style={{ color: '#a0a0a0', marginTop: 8 }}>Loading…</Text>
-        </View>
-      )}
-
-      {error && (
-        <View style={{ paddingHorizontal: 20 }}>
-          <Text style={{ color: '#ff6b6b' }}>{error}</Text>
-        </View>
-      )}
-
-      {/* This Day in History (live) */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📖 This Day in History</Text>
-        {(historyEvents ?? []).slice(0, 3).map((ev, idx) => (
-          <View key={idx} style={styles.card}>
-            <Text style={styles.year}>{ev.year}</Text>
-            <Text style={styles.eventText}>{ev.text}</Text>
+    <View style={styles.container}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 160 }}>
+        <View style={styles.header}>
+          <Text style={styles.title}>📚 Daily Bite: Fun & Facts</Text>
+          <Text style={styles.subtitle}>Your daily dose of history, facts & puzzles!</Text>
+          <View style={styles.streakBadge}>
+            <Text style={styles.streakText}>🔥 5-day streak</Text>
           </View>
-        ))}
-        {!loading && historyEvents.length === 0 && (
-          <Text style={{ color: '#a0a0a0' }}>No events found today.</Text>
-        )}
-      </View>
+        </View>
 
-      {/* Fun Fact (live) */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💡 Fun Fact of the Day</Text>
-        <View style={styles.factCard}>
-          <Text style={styles.factText}>
-            {funFact?.text ?? (loading ? '' : 'No fun fact available.')}
-          </Text>
+        {loading && (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <ActivityIndicator />
+            <Text style={{ color: '#a0a0a0', marginTop: 8 }}>Loading…</Text>
+          </View>
+        )}
+
+        {error && (
+          <View style={{ paddingHorizontal: 20 }}>
+            <Text style={{ color: '#ff6b6b' }}>{error}</Text>
+          </View>
+        )}
+
+        {/* This Day in History (live) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📖 This Day in History</Text>
+          {(historyEvents ?? []).slice(0, 3).map((ev, idx) => (
+            <View key={idx} style={styles.card}>
+              <Text style={styles.year}>{ev.year}</Text>
+              <Text style={styles.eventText}>{ev.text}</Text>
+            </View>
+          ))}
+          {!loading && historyEvents.length === 0 && (
+            <Text style={{ color: '#a0a0a0' }}>No events found today.</Text>
+          )}
+        </View>
+
+        {/* Fun Fact (live) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>💡 Fun Fact of the Day</Text>
+          <View style={styles.factCard}>
+            <Text style={styles.factText}>
+              {funFact?.text ?? (loading ? '' : 'No fun fact available.')}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🧩 Daily Puzzle</Text>
+          <TouchableOpacity style={styles.puzzleButton} onPress={() => router.push('/puzzle')}>
+            <Text style={styles.puzzleButtonText}>Play Today&apos;s Puzzle</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Fixed bottom: banner above tabs */}
+      <View style={styles.bottomArea}>
+        <View style={{ alignItems: 'center', marginBottom: 6 }}>
+          <BannerAd unitId={BANNER_ID} size={BannerAdSize.LARGE_BANNER} />
+        </View>
+        <View style={styles.tabBar}>
+          <TouchableOpacity style={[styles.tab, styles.tabActive]} onPress={() => router.replace('/')}>
+            <Text style={[styles.tabText, styles.tabTextActive]}>🏠 Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tab} onPress={() => router.replace('/leaderboard')}>
+            <Text style={styles.tabText}>🏆 Leaderboard</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tab} onPress={() => router.replace('/profile')}>
+            <Text style={styles.tabText}>👤 Profile</Text>
+          </TouchableOpacity>
         </View>
       </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🧩 Daily Puzzle</Text>
-        <TouchableOpacity
-          style={styles.puzzleButton}
-          onPress={() => router.push('/puzzle')}
-        >
-          <Text style={styles.puzzleButtonText}>Play Today's Puzzle</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tab} onPress={() => router.push('/')}>
-          <Text style={styles.activeTabText}>🏠 Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab} onPress={() => router.push('/leaderboard')}>
-          <Text style={styles.tabText}>🏆 Leaderboard</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab} onPress={() => router.push('/profile')}>
-          <Text style={styles.tabText}>👤 Profile</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Banner Ad */}
-      <View style={{ alignItems: 'center', marginBottom: 12 }}>
-        <BannerAd unitId={BANNER_ID} size={BannerAdSize.BANNER} />
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -121,6 +116,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 16, color: '#a0a0a0', textAlign: 'center', marginBottom: 20 },
   streakBadge: { backgroundColor: 'rgba(255, 107, 107, 0.2)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
   streakText: { color: '#ff6b6b', fontWeight: 'bold', fontSize: 16 },
+
   section: { margin: 20, marginTop: 30 },
   sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#ffffff', marginBottom: 15 },
   card: { backgroundColor: '#16213e', padding: 16, borderRadius: 12, marginBottom: 10, borderLeftWidth: 4, borderLeftColor: '#4ecdc4' },
@@ -130,8 +126,17 @@ const styles = StyleSheet.create({
   factText: { fontSize: 16, color: '#ffffff', lineHeight: 24, marginBottom: 10 },
   puzzleButton: { backgroundColor: '#45b7d1', padding: 20, borderRadius: 12, alignItems: 'center' },
   puzzleButtonText: { fontSize: 18, fontWeight: 'bold', color: '#ffffff' },
-  tabBar: { flexDirection: 'row', backgroundColor: '#16213e', paddingVertical: 10, marginTop: 20 },
-  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-  tabText: { fontSize: 14, color: '#a0a0a0' },
-  activeTabText: { fontSize: 14, color: '#ffffff', fontWeight: 'bold' },
+
+  bottomArea: {
+    position: 'absolute', left: 0, right: 0, bottom: 0,
+    backgroundColor: '#0f1626', paddingTop: 6,
+  },
+  tabBar: {
+    flexDirection: 'row', backgroundColor: '#16213e',
+    paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#0f3460',
+  },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center' },
+  tabActive: { backgroundColor: '#273c75' },
+  tabText: { fontSize: 12, color: '#a0a0a0' },
+  tabTextActive: { color: '#fff', fontWeight: 'bold' },
 });
