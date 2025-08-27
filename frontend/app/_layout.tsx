@@ -5,25 +5,31 @@ import { View } from 'react-native';
 import BottomBar from '../components/BottomBar';
 
 export default function RootLayout() {
-  const [initial, setInitial] = useState<'welcome'|'home'|null>(null);
+  const [initial, setInitial] = useState<'welcome' | 'home' | null>(null);
 
   useEffect(() => {
     (async () => {
-      const name = await AsyncStorage.getItem('displayName');
-      setInitial(name ? 'home' : 'welcome');
+      try {
+        const name = await AsyncStorage.getItem('displayName');
+        setInitial(name ? 'home' : 'welcome');
+      } catch {
+        setInitial('welcome');
+      }
     })();
   }, []);
 
   if (!initial) return null;
 
+  const initialRoute = initial === 'welcome' ? 'welcome' : 'index';
+
   return (
-    <View style={{ flex:1, backgroundColor:'#1a1a2e' }}>
+    <View style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
       <Stack
-        initialRouteName={initial === 'welcome' ? 'welcome' : 'index'}
-        screenOptions={{ headerShown:false, contentStyle:{ backgroundColor:'#1a1a2e' } }}
+        initialRouteName={initialRoute}
+        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#1a1a2e' } }}
       />
-      {/* fixed bottom bar on top of native stack */}
-      {initial !== 'welcome' && <BottomBar />}
+      {/* Fixed bottom bar is shown on non-welcome screens */}
+      {initialRoute !== 'welcome' && <BottomBar />}
     </View>
   );
 }
