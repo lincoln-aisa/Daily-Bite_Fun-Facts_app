@@ -1,4 +1,19 @@
-const BASE_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || "").replace(/\/$/, "");
+const BASE_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+// --- NEW: create/update user on backend so names appear on leaderboard/profile
+export const submitUser = async (user) => {
+  try {
+    const res = await fetch(`${BASE_URL}/api/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user),
+    });
+    return await res.json();
+  } catch (e) {
+    console.error('Error submitting user:', e);
+    return { success: false };
+  }
+};
 
 // --- HISTORY ---
 export const getHistoryEvents = async (month, day) => {
@@ -59,20 +74,28 @@ export const getDailyPuzzle = async () => {
 
 // --- BACKEND HELPERS ---
 export const submitPuzzleScore = async (userId, score, timeTaken) => {
-  if (!BASE_URL) return { success: false, error: 'No backend URL configured' };
   try {
-    const res = await fetch(`${BASE_URL}/api/submit-score`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, score, timeTaken, date: new Date().toISOString().split('T')[0] }),
+    const dateUTC = new Date().toISOString().slice(0, 10); // YYYY-MM-DD in UTC
+    const response = await fetch(`${BASE_URL}/api/submit-score`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, score, timeTaken, date: dateUTC }),
     });
-    return await res.json();
-  } catch (e) { console.error('Error submitting score:', e); return { success: false, error: e.message }; }
+    return await response.json();
+  } catch (error) {
+    console.error('Error submitting score:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 export const getLeaderboard = async (period = 'today') => {
-  if (!BASE_URL) return [];
-  try { const res = await fetch(`${BASE_URL}/api/leaderboard?period=${period}`); return await res.json(); }
-  catch (e) { console.error('Error fetching leaderboard:', e); return []; }
+  try {
+    const response = await fetch(`${BASE_URL}/api/leaderboard?period=${period}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    return [];
+  }
 };
 
 export const processReward = async (userId, rewardType, rewardAmount) => {
