@@ -10,24 +10,24 @@ export default function BottomBar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const isActive = (p: string) => pathname === p;
+
   return (
-    <View style={styles.wrap}>
-      {/* Ad above tabs */}
-      <View style={styles.adWrap}>
+    <View style={styles.wrap} pointerEvents="box-none">
+      <View style={styles.adWrap} pointerEvents="none">
         <BannerAd unitId={BANNER_ID} size={BannerAdSize.LARGE_BANNER} />
       </View>
 
-      {/* Tabs */}
       <View style={styles.tabs}>
-        <Tab label="🏠 Home" active={pathname === '/'} onPress={() => router.replace('/')} />
-        <Tab label="🏆 Leaderboard" active={pathname === '/leaderboard'} onPress={() => router.replace('/leaderboard')} />
-        <Tab label="👤 Profile" active={pathname === '/profile'} onPress={() => router.replace('/profile')} />
+        <Tab label="🏠 Home" active={isActive('/')} onPress={() => router.push('/')} />
+        <Tab label="🏆 Leaderboard" active={isActive('/leaderboard')} onPress={() => router.push('/leaderboard')} />
+        <Tab label="👤 Profile" active={isActive('/profile')} onPress={() => router.push('/profile')} />
       </View>
     </View>
   );
 }
 
-function Tab({ label, active, onPress }: {label:string; active:boolean; onPress:()=>void}) {
+function Tab({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
     <TouchableOpacity style={[styles.tab, active && styles.tabActive]} onPress={onPress}>
       <Text style={[styles.tabText, active && styles.tabTextActive]}>{label}</Text>
