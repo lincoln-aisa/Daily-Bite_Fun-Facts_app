@@ -16,23 +16,22 @@ export default function Welcome() {
   const continueAsGuest = async () => {
     try {
       setBusy(true);
-      await ensureAnonSignIn(); // guarantees auth.currentUser
+      await ensureAnonSignIn();           // ensures a real Firebase UID (anonymous)
       const uid = auth.currentUser?.uid;
       const displayName = name.trim() || 'Guest';
 
-      await AsyncStorage.setItem('displayName', displayName);
+      await AsyncStorage.multiSet([
+        ['displayName', displayName],
+        ['hasOnboarded', '1'],
+      ]);
 
-      // Tell your backend about this user (so leaderboard/profile can resolve names)
       if (uid) {
-        await submitUser({
-          uid,
-          display_name: displayName,
-          is_anonymous: true,
-        });
+        await submitUser({ uid, display_name: displayName, is_anonymous: true });
       }
 
       router.replace('/');
     } catch (e) {
+      console.log(e);
       Alert.alert('Error', 'Could not sign in anonymously.');
     } finally {
       setBusy(false);
@@ -50,13 +49,13 @@ export default function Welcome() {
         placeholderTextColor="#888"
         value={name}
         onChangeText={setName}
+        autoCapitalize="words"
       />
 
       <TouchableOpacity style={styles.primary} disabled={busy} onPress={continueAsGuest}>
         <Text style={styles.primaryText}>{busy ? 'Please wait…' : 'Continue as Guest'}</Text>
       </TouchableOpacity>
 
-      {/* Add Google / Email later when ready */}
       <View style={{ marginTop: 30, alignItems: 'center' }}>
         <BannerAd unitId={BANNER_ID} size={BannerAdSize.LARGE_BANNER} />
       </View>
