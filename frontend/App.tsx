@@ -6,20 +6,24 @@ import { ensureAnonSignIn, onAuth } from './services/firebase';
 
 export default function App() {
   useEffect(() => {
-    // Firebase anonymous auth
+    // Ensure a real UID for every device (anonymous if not signed in)
     ensureAnonSignIn().catch(console.log);
-    const unsub = onAuth((uid) => console.log('Auth UID:', uid));
-    // Mobile Ads init
-    mobileAds().setRequestConfiguration({
-      maxAdContentRating: MaxAdContentRating.T,
-      tagForChildDirectedTreatment: false,
-      tagForUnderAgeOfConsent: false,
-      testDeviceIdentifiers: ['EMULATOR'],
-    }).then(() => mobileAds().initialize());
-    return () => unsub();
+    const unsubAuth = onAuth((uid) => console.log('Auth UID:', uid));
+
+    // Initialize AdMob once
+    mobileAds()
+      .setRequestConfiguration({
+        maxAdContentRating: MaxAdContentRating.T,
+        tagForChildDirectedTreatment: false,
+        tagForUnderAgeOfConsent: false,
+        testDeviceIdentifiers: ['EMULATOR'],
+      })
+      .then(() => mobileAds().initialize())
+      .catch((e) => console.log('Ads init error', e));
+
+    return () => unsubAuth();
   }, []);
 
   const ctx = require.context('./app');
   return <ExpoRoot context={ctx} />;
 }
-
