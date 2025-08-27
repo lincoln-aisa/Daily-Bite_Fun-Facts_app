@@ -71,24 +71,6 @@ export default function ProfilePage() {
           <Text style={{ color: '#a0a0a0' }}>No stats yet. Play a puzzle!</Text>
         )}
       </ScrollView>
-
-      {/* Fixed bottom: banner above tabs */}
-      <View style={styles.bottomArea}>
-        <View style={{ alignItems: 'center', marginBottom: 6 }}>
-          <BannerAd unitId={BANNER_ID} size={BannerAdSize.LARGE_BANNER} />
-        </View>
-        <View style={styles.tabBar}>
-          <TouchableOpacity style={styles.tab} onPress={() => router.replace('/')}>
-            <Text style={styles.tabText}>🏠 Home</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.tab, styles.tabActive]}>
-            <Text style={[styles.tabText, styles.tabTextActive]}>🏆 Leaderboard</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.tab} onPress={() => router.replace('/profile')}>
-            <Text style={styles.tabText}>👤 Profile</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
     </View>
   );
 }
