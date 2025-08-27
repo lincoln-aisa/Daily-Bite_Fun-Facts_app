@@ -10,9 +10,10 @@ export default function RootLayout() {
   useEffect(() => {
     (async () => {
       try {
-        const name = await AsyncStorage.getItem('displayName');
-        setInitial(name ? 'home' : 'welcome');
+        const hasOnboarded = await AsyncStorage.getItem('hasOnboarded');
+        setInitial(hasOnboarded === '1' ? 'home' : 'welcome');
       } catch {
+        // fail-safe: show welcome
         setInitial('welcome');
       }
     })();
@@ -20,16 +21,13 @@ export default function RootLayout() {
 
   if (!initial) return null;
 
-  const initialRoute = initial === 'welcome' ? 'welcome' : 'index';
-
   return (
     <View style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
       <Stack
-        initialRouteName={initialRoute}
+        initialRouteName={initial === 'welcome' ? 'welcome' : 'index'}
         screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#1a1a2e' } }}
       />
-      {/* Fixed bottom bar is shown on non-welcome screens */}
-      {initialRoute !== 'welcome' && <BottomBar />}
+      {initial !== 'welcome' && <BottomBar />}
     </View>
   );
 }
