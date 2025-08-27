@@ -6,7 +6,7 @@ import { ensureAnonSignIn, onAuth } from './services/firebase';
 
 export default function App() {
   useEffect(() => {
-    // Ensure a real UID for every device (anonymous if not signed in)
+    // Keep one stable Firebase UID per device (anonymous if not signed in)
     ensureAnonSignIn().catch(console.log);
     const unsubAuth = onAuth((uid) => console.log('Auth UID:', uid));
 
