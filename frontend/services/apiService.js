@@ -88,7 +88,11 @@ export const processReward = async (userId, rewardType, rewardAmount) => {
 
 // NEW: user stats
 export const getUserStats = async (userId) => {
-  if (!BASE_URL) return null;
-  try { const res = await fetch(`${BASE_URL}/api/user/${userId}/stats`); if (!res.ok) throw new Error('stats failed'); return await res.json(); }
-  catch (e) { console.error('Error fetching user stats:', e); return null; }
+  try {
+    const res = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/user/${userId}/stats`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 };
