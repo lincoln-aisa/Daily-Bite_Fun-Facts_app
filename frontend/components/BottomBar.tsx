@@ -1,3 +1,4 @@
+// frontend/components/BottomBar.tsx
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
