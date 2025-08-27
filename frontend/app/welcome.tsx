@@ -16,8 +16,8 @@ export default function Welcome() {
   const continueAsGuest = async () => {
     try {
       setBusy(true);
-      await ensureAnonSignIn();           // ensures a real Firebase UID (anonymous)
-      const uid = auth.currentUser?.uid;
+      await ensureAnonSignIn(); // ensures a real Firebase UID for this device
+      const uid = auth.currentUser?.uid!;
       const displayName = name.trim() || 'Guest';
 
       await AsyncStorage.multiSet([
@@ -25,14 +25,13 @@ export default function Welcome() {
         ['hasOnboarded', '1'],
       ]);
 
-      if (uid) {
-        await submitUser({ uid, display_name: displayName, is_anonymous: true });
-      }
+      // create/update user in backend so leaderboard can show names
+      await submitUser({ uid, display_name: displayName, is_anonymous: true });
 
       router.replace('/');
     } catch (e) {
       console.log(e);
-      Alert.alert('Error', 'Could not sign in anonymously.');
+      Alert.alert('Error', 'Could not finish sign-in.');
     } finally {
       setBusy(false);
     }
@@ -41,7 +40,7 @@ export default function Welcome() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>👋 Welcome to Daily Bite</Text>
-      <Text style={styles.subtitle}>Sign in to save your streaks & points</Text>
+      <Text style={styles.subtitle}>Save your streaks & points across sessions</Text>
 
       <TextInput
         style={styles.input}
