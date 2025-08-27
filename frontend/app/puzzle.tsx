@@ -13,6 +13,7 @@ export default function PuzzlePage() {
   const [puzzle, setPuzzle] = useState<{ question: string; answers: string[]; correctAnswer: string } | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [hiddenIdx, setHiddenIdx] = useState<number[]>([]);
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -43,28 +44,32 @@ export default function PuzzlePage() {
   };
 
   const handleGetHint = () => {
-    // Create & show the Rewarded ad on demand
-    const rewarded = RewardedAd.createForAdRequest(REWARDED_ID, { requestNonPersonalizedAdsOnly: true });
+    const ad = RewardedAd.createForAdRequest(REWARDED_ID, { requestNonPersonalizedAdsOnly: true });
 
-    const onReward = rewarded.addAdEventListener(AdEventType.EARNED_REWARD, async () => {
+    const offLoaded = ad.addAdEventListener(AdEventType.LOADED, async () => {
+      try {
+        await ad.show();
+      } catch {
+        revealHint();
+      }
+    });
+
+    const offReward = ad.addAdEventListener(AdEventType.EARNED_REWARD, async () => {
       revealHint();
       const uid = auth.currentUser?.uid;
       if (uid) processReward(uid, 'hint', 1).catch(() => {});
     });
 
-    const onClosed = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
-      onReward(); onClosed();
+    const offClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
+      offLoaded(); offReward(); offClosed();
     });
 
-    rewarded.load();
-    rewarded.show().catch(() => {
-      // Fallback: still give a hint if the ad can’t show
-      revealHint();
-    });
+    ad.load();
   };
 
   const handleAnswerSelect = async (answer: string) => {
-    if (!puzzle) return;
+    if (!puzzle || locked) return;
+    setLocked(true);
     setSelectedAnswer(answer);
 
     if (answer === puzzle.correctAnswer) {
@@ -74,16 +79,22 @@ export default function PuzzlePage() {
         try { await submitPuzzleScore(uid, 100, 0); } catch (e) { console.log('submitPuzzleScore error', e); }
       }
     } else {
-      Alert.alert('Wrong Answer 😔', `The correct answer was ${puzzle.correctAnswer}`);
+      Alert.alert('Almost!', 'Try watching a short ad to get a hint.', [
+        { text: 'Get a hint', onPress: handleGetHint },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
     }
   };
+
+  const canTap = (idx: number) => !locked && !hiddenIdx.includes(idx);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>🧩 Daily Puzzle</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+        {/* Back should navigate, not history back (since tabs use replace sometimes) */}
+        <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
+          <Text style={styles.backText}>← Home</Text>
         </TouchableOpacity>
       </View>
 
@@ -94,7 +105,11 @@ export default function PuzzlePage() {
           <>
             <Text style={styles.question}>{puzzle?.question}</Text>
 
-            <TouchableOpacity style={[styles.answerButton, { backgroundColor: '#2b945e', marginBottom: 16 }]} onPress={handleGetHint}>
+            <TouchableOpacity
+              disabled={locked}
+              style={[styles.answerButton, { backgroundColor: locked ? '#2f5f4a' : '#2b945e', marginBottom: 16 }]}
+              onPress={handleGetHint}
+            >
               <Text style={styles.answerText}>🎁 Get a Hint (watch ad)</Text>
             </TouchableOpacity>
 
@@ -102,7 +117,12 @@ export default function PuzzlePage() {
               hiddenIdx.includes(idx) ? null : (
                 <TouchableOpacity
                   key={idx}
-                  style={[styles.answerButton, selectedAnswer === answer && styles.selectedAnswer]}
+                  style={[
+                    styles.answerButton,
+                    selectedAnswer === answer && styles.selectedAnswer,
+                    !canTap(idx) && { opacity: 0.5 },
+                  ]}
+                  disabled={!canTap(idx)}
                   onPress={() => handleAnswerSelect(answer)}
                 >
                   <Text style={styles.answerText}>{answer}</Text>
