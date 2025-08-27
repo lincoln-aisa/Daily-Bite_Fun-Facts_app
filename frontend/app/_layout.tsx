@@ -13,7 +13,6 @@ export default function RootLayout() {
         const hasOnboarded = await AsyncStorage.getItem('hasOnboarded');
         setInitial(hasOnboarded === '1' ? 'home' : 'welcome');
       } catch {
-        // fail-safe: show welcome
         setInitial('welcome');
       }
     })();
