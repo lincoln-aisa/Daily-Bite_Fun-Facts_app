@@ -36,7 +36,7 @@ export default function ProfilePage() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>👤 Profile</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.replace('/')} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
       </View>
@@ -92,16 +92,4 @@ const styles = StyleSheet.create({
   section: { marginTop: 20 },
   sectionTitle: { fontSize: 18, color: '#fff', marginBottom: 8, fontWeight: '600' },
 
-  bottomArea: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
-    backgroundColor: '#0f1626', paddingTop: 6,
-  },
-  tabBar: {
-    flexDirection: 'row', backgroundColor: '#16213e',
-    paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#0f3460',
-  },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center' },
-  tabText: { fontSize: 12, color: '#a0a0a0' },
-  tabActive: { backgroundColor: '#273c75' },
-  tabTextActive: { color: '#fff', fontWeight: 'bold' },
 });
