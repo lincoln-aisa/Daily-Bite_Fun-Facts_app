@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// frontend/app/welcome.tsx
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -13,25 +14,39 @@ export default function Welcome() {
   const [busy, setBusy] = useState(false);
   const router = useRouter();
 
+  // If a name already exists, skip this screen
+  useEffect(() => {
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem('displayName');
+        if (saved && saved.trim().length > 0) {
+          router.replace('/'); // go straight to Home
+        }
+      } catch {}
+    })();
+  }, [router]);
+
   const continueAsGuest = async () => {
+    const displayName = name.trim() || 'Guest';
+    setBusy(true);
+
     try {
-      setBusy(true);
-      await ensureAnonSignIn(); // ensures a real Firebase UID for this device
-      const uid = auth.currentUser?.uid!;
-      const displayName = name.trim() || 'Guest';
+      // Save name first so the app can move on immediately
+      await AsyncStorage.setItem('displayName', displayName);
 
-      await AsyncStorage.multiSet([
-        ['displayName', displayName],
-        ['hasOnboarded', '1'],
-      ]);
-
-      // create/update user in backend so leaderboard can show names
-      await submitUser({ uid, display_name: displayName, is_anonymous: true });
-
+      // Navigate right away – do NOT block on network/auth
       router.replace('/');
+
+      // Try to ensure we have a UID (anonymous if needed)
+      ensureAnonSignIn().catch(() => {});
+
+      // Tell backend about this user, but don't block UI if it fails
+      const uid = auth.currentUser?.uid;
+      if (uid) {
+        submitUser({ uid, display_name: displayName, is_anonymous: true }).catch(() => {});
+      }
     } catch (e) {
-      console.log(e);
-      Alert.alert('Error', 'Could not finish sign-in.');
+      Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
       setBusy(false);
     }
@@ -49,6 +64,7 @@ export default function Welcome() {
         value={name}
         onChangeText={setName}
         autoCapitalize="words"
+        returnKeyType="done"
       />
 
       <TouchableOpacity style={styles.primary} disabled={busy} onPress={continueAsGuest}>
