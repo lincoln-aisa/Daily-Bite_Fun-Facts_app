@@ -102,24 +102,34 @@ async def root():
 async def create_or_update_user(user_data: User):
     """Create or update a user in the database"""
     try:
-        # Check if user exists
         existing_user = await db.users.find_one({"uid": user_data.uid})
-        
+
+        # Fields we’re willing to update if provided
+        update_fields = {"last_active": datetime.utcnow()}
+        if user_data.display_name:
+            update_fields["display_name"] = user_data.display_name
+        if user_data.email is not None:
+            update_fields["email"] = user_data.email
+        if user_data.is_anonymous is not None:
+            update_fields["is_anonymous"] = user_data.is_anonymous
+
         if existing_user:
-            # Update last active
             await db.users.update_one(
                 {"uid": user_data.uid},
-                {"$set": {"last_active": datetime.utcnow()}}
+                {"$set": update_fields}
             )
-            # Remove MongoDB ObjectId for JSON serialization
-            existing_user['_id'] = str(existing_user['_id'])
-            return {"success": True, "message": "User updated", "user": existing_user}
+            # Re-read user (and stringify _id)
+            updated = await db.users.find_one({"uid": user_data.uid})
+            updated["_id"] = str(updated["_id"])
+            return {"success": True, "message": "User updated", "user": updated}
         else:
-            # Create new user
             user_dict = user_data.dict()
+            # ensure created_at/last_active present
+            user_dict.setdefault("created_at", datetime.utcnow())
+            user_dict.setdefault("last_active", datetime.utcnow())
             result = await db.users.insert_one(user_dict)
             return {"success": True, "message": "User created", "user_id": str(result.inserted_id)}
-    
+
     except Exception as e:
         logging.error(f"Error creating/updating user: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
