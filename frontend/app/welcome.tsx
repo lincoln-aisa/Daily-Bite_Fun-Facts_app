@@ -30,6 +30,13 @@ export default function Welcome() {
     const displayName = name.trim() || 'Guest';
     setBusy(true);
 
+    const displayName = name.trim();
+    if (!displayName) {
+      Alert.alert('Name required', 'Please enter a display name.');
+      setBusy(false);
+      return; // stop the flow if name is empty
+    }
+
     try {
       // Save name first so the app can move on immediately
       await AsyncStorage.setItem('displayName', displayName);
