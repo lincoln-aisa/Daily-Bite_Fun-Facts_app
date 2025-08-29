@@ -76,16 +76,4 @@ const styles = StyleSheet.create({
   playerName: { fontSize: 16, color: '#ffffff', flex: 1 },
   score: { fontSize: 14, color: '#4ecdc4', fontWeight: 'bold' },
 
-  bottomArea: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
-    backgroundColor: '#0f1626', paddingTop: 6,
-  },
-  tabBar: {
-    flexDirection: 'row', backgroundColor: '#16213e',
-    paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#0f3460',
-  },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center' },
-  tabText: { fontSize: 12, color: '#a0a0a0' },
-  tabActive: { backgroundColor: '#273c75' },
-  tabTextActive: { color: '#fff', fontWeight: 'bold' },
 });
