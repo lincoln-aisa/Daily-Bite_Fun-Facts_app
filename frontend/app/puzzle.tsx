@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } fr
 import { useRouter } from 'expo-router';
 import { getDailyPuzzle, submitPuzzleScore, processReward } from '../services/apiService';
 import { auth } from '../services/firebase';
-import { RewardedAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
+import { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
 
 const REWARDED_ID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID || TestIds.REWARDED;
 
@@ -46,7 +46,7 @@ export default function PuzzlePage() {
   const handleGetHint = () => {
     const ad = RewardedAd.createForAdRequest(REWARDED_ID, { requestNonPersonalizedAdsOnly: true });
 
-    const offLoaded = ad.addAdEventListener(AdEventType.LOADED, async () => {
+    const offLoaded = ad.addAdEventListener(RewardedAdEventType.LOADED, async () => {
       try {
         await ad.show();
       } catch {
@@ -54,13 +54,13 @@ export default function PuzzlePage() {
       }
     });
 
-    const offReward = ad.addAdEventListener(AdEventType.EARNED_REWARD, async () => {
+    const offReward = ad.addAdEventListener(RewardedAdEventType.EARNED_REWARD, async () => {
       revealHint();
       const uid = auth.currentUser?.uid;
       if (uid) processReward(uid, 'hint', 1).catch(() => {});
     });
 
-    const offClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
+    const offClosed = ad.addAdEventListener(RewardedAdEventType.CLOSED, () => {
       offLoaded(); offReward(); offClosed();
     });
 
@@ -69,7 +69,7 @@ export default function PuzzlePage() {
 
   const handleAnswerSelect = async (answer: string) => {
     if (!puzzle || locked) return;
-    setLocked(true);
+    setLocked(true);                // one attempt only
     setSelectedAnswer(answer);
 
     if (answer === puzzle.correctAnswer) {
@@ -92,8 +92,8 @@ export default function PuzzlePage() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>🧩 Daily Puzzle</Text>
-        {/* Back should navigate, not history back (since tabs use replace sometimes) */}
-        <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
+        {/* Always go Home to avoid odd back stacks */}
+        <TouchableOpacity onPress={() => router.replace('/')} style={styles.backButton}>
           <Text style={styles.backText}>← Home</Text>
         </TouchableOpacity>
       </View>
