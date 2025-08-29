@@ -36,7 +36,7 @@ export default function LeaderboardPage() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>🏆 Leaderboard</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.replace('/')} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
       </View>
