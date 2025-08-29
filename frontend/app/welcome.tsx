@@ -1,5 +1,5 @@
 // frontend/app/welcome.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
@@ -14,46 +14,40 @@ export default function Welcome() {
   const [busy, setBusy] = useState(false);
   const router = useRouter();
 
-  // If a name already exists, skip this screen
-  useEffect(() => {
-    (async () => {
-      try {
-        const saved = await AsyncStorage.getItem('displayName');
-        if (saved && saved.trim().length > 0) {
-          router.replace('/'); // go straight to Home
-        }
-      } catch {}
-    })();
-  }, [router]);
-
   const continueAsGuest = async () => {
-    const displayName = name.trim() || 'Guest';
-    setBusy(true);
-
-    const displayName = name.trim();
-    if (!displayName) {
-      Alert.alert('Name required', 'Please enter a display name.');
-      setBusy(false);
-      return; // stop the flow if name is empty
-    }
-
+    if (busy) return;
     try {
-      // Save name first so the app can move on immediately
-      await AsyncStorage.setItem('displayName', displayName);
+      setBusy(true);
 
-      // Navigate right away – do NOT block on network/auth
-      router.replace('/');
-
-      // Try to ensure we have a UID (anonymous if needed)
-      ensureAnonSignIn().catch(() => {});
-
-      // Tell backend about this user, but don't block UI if it fails
-      const uid = auth.currentUser?.uid;
-      if (uid) {
-        submitUser({ uid, display_name: displayName, is_anonymous: true }).catch(() => {});
+      // 1) Validate once and only declare once
+      const chosenName = name.trim();
+      if (!chosenName) {
+        Alert.alert('Name required', 'Please enter a display name.');
+        setBusy(false);
+        return;
       }
+
+      // 2) Ensure a real (anonymous) UID
+      await ensureAnonSignIn();
+      const uid = auth.currentUser?.uid;
+
+      // 3) Persist locally so _layout.tsx can route to Home next time
+      await AsyncStorage.setItem('displayName', chosenName);
+
+      // 4) Tell backend (fire-and-forget so navigation is instant)
+      if (uid) {
+        submitUser({
+          uid,
+          display_name: chosenName,
+          is_anonymous: true,
+        }).catch((e) => console.log('submitUser failed (non-blocking):', e));
+      }
+
+      // 5) Navigate immediately
+      router.replace('/');
     } catch (e) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      console.log('Welcome error:', e);
+      Alert.alert('Error', 'Could not complete sign-in.');
     } finally {
       setBusy(false);
     }
@@ -71,7 +65,6 @@ export default function Welcome() {
         value={name}
         onChangeText={setName}
         autoCapitalize="words"
-        returnKeyType="done"
       />
 
       <TouchableOpacity style={styles.primary} disabled={busy} onPress={continueAsGuest}>
