@@ -24,15 +24,17 @@ export default function RootLayout() {
 
   // Hard redirect to /welcome until hasOnboarded === '1'
   useEffect(() => {
-    if (!loaded) return;
-    (async () => {
-      const flag = await AsyncStorage.getItem('hasOnboarded');
-      const onboarded = flag === '1';
-      if (!onboarded && pathname !== '/welcome') {
-        router.replace('/welcome');
-      }
-    })();
-  }, [loaded, pathname, router]);
+  if (!loaded) return;
+
+  if (hasOnboarded !== '1' && pathname !== '/welcome') {
+    // Not onboarded yet → force to welcome
+    router.replace('/welcome');
+  } else if (hasOnboarded === '1' && pathname === '/welcome') {
+    // Just finished onboarding → go to home immediately
+    router.replace('/');
+  }
+}, [loaded, hasOnboarded, pathname, router]);
+
 
   // Don’t render anything until we know where to send the user
   if (!loaded) return null;
