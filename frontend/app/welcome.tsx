@@ -19,7 +19,7 @@ export default function Welcome() {
     try {
       setBusy(true);
 
-      // 1) Validate once and only declare once
+      // 1) Validate name
       const chosenName = name.trim();
       if (!chosenName) {
         Alert.alert('Name required', 'Please enter a display name.');
@@ -27,14 +27,15 @@ export default function Welcome() {
         return;
       }
 
-      // 2) Ensure a real (anonymous) UID
+      // 2) Ensure Firebase gives us a UID (anonymous if not signed in)
       await ensureAnonSignIn();
       const uid = auth.currentUser?.uid;
 
-      // 3) Persist locally so _layout.tsx can route to Home next time
+      // 3) Save locally for later use
       await AsyncStorage.setItem('displayName', chosenName);
+      await AsyncStorage.setItem('hasOnboarded', '1');   // ✅ the missing piece
 
-      // 4) Tell backend (fire-and-forget so navigation is instant)
+      // 4) Tell backend (fire-and-forget)
       if (uid) {
         submitUser({
           uid,
@@ -43,8 +44,8 @@ export default function Welcome() {
         }).catch((e) => console.log('submitUser failed (non-blocking):', e));
       }
 
-      // 5) Navigate immediately
-      router.push('/');
+      // 5) Navigate to home, replacing welcome
+      router.replace('/');
     } catch (e) {
       console.log('Welcome error:', e);
       Alert.alert('Error', 'Could not complete sign-in.');
@@ -52,7 +53,6 @@ export default function Welcome() {
       setBusy(false);
     }
   };
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>👋 Welcome to Daily Bite</Text>
