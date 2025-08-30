@@ -37,7 +37,6 @@ export default function Welcome() {
       // 4) Tell backend (fire-and-forget so navigation is instant)
       if (uid) {
         submitUser({
-          console.log('SubmitUser funtion called');
           uid,
           display_name: chosenName,
           is_anonymous: true,
