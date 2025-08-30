@@ -30,6 +30,18 @@ export default function RootLayout() {
     }
   }, [loaded, hasOnboarded, pathname, router]);
 
+
+useEffect(() => {
+  if (!loaded) return;
+  (async () => {
+    const flag = await AsyncStorage.getItem('hasOnboarded');
+    const onboarded = flag === '1';
+    if (!onboarded && pathname !== '/welcome') {
+      router.replace('/welcome');
+    }
+  })();
+}, [loaded, pathname, router]);
+
   // Don’t render anything until we know where to send the user
   if (!loaded) return null;
 
@@ -41,3 +53,4 @@ export default function RootLayout() {
     </View>
   );
 }
+
