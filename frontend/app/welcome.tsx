@@ -37,6 +37,7 @@ export default function Welcome() {
       // 4) Tell backend (fire-and-forget so navigation is instant)
       if (uid) {
         submitUser({
+          console.log('SubmitUser funtion called');
           uid,
           display_name: chosenName,
           is_anonymous: true,
@@ -44,7 +45,7 @@ export default function Welcome() {
       }
 
       // 5) Navigate immediately
-      router.replace('/');
+      router.push('/');
     } catch (e) {
       console.log('Welcome error:', e);
       Alert.alert('Error', 'Could not complete sign-in.');
