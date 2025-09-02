@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// frontend/app/puzzle.tsx
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getDailyPuzzle, submitPuzzleScore, processReward } from '../services/apiService';
@@ -7,76 +8,116 @@ import { RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mo
 
 const REWARDED_ID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID || TestIds.REWARDED;
 
+/**
+ * ---------- Rewarded Ad (singleton) ----------
+ * Keep a single instance across renders to avoid listener leaks & crashes.
+ */
+const rewarded = RewardedAd.createForAdRequest(REWARDED_ID, { requestNonPersonalizedAdsOnly: true });
+let rewardedLoaded = false;
+// Global loader listener – fires whenever the ad instance finishes loading
+rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
+  rewardedLoaded = true;
+});
+
 export default function PuzzlePage() {
   const router = useRouter();
+
   const [loading, setLoading] = useState(true);
   const [puzzle, setPuzzle] = useState<{ question: string; answers: string[]; correctAnswer: string } | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [hiddenIdx, setHiddenIdx] = useState<number[]>([]);
   const [locked, setLocked] = useState(false);
 
+  // track mount to avoid setState after unmount
+  const mountedRef = useRef(true);
+
   useEffect(() => {
+    mountedRef.current = true;
     (async () => {
       try {
         const q = await getDailyPuzzle();
-        setPuzzle(q);
-      } catch {
-        setPuzzle({
+        if (mountedRef.current) setPuzzle(q ?? {
           question: 'What is the largest planet in our solar system?',
           correctAnswer: 'Jupiter',
           answers: ['Jupiter', 'Saturn', 'Earth', 'Mars'],
         });
       } finally {
-        setLoading(false);
+        if (mountedRef.current) setLoading(false);
       }
     })();
+
+    // Preload an ad when the screen mounts so it's ready when user taps
+    rewardedLoaded = false;
+    rewarded.load();
+
+    return () => { mountedRef.current = false; };
   }, []);
 
   const revealHint = () => {
     if (!puzzle) return;
+    // hide two random wrong answers
     const wrong = puzzle.answers
       .map((a, i) => ({ a, i }))
       .filter((x) => x.a !== puzzle.correctAnswer)
       .sort(() => Math.random() - 0.5)
       .slice(0, 2)
       .map((x) => x.i);
-    setHiddenIdx(wrong);
+    if (mountedRef.current) setHiddenIdx(wrong);
   };
 
   const handleGetHint = () => {
-    const ad = RewardedAd.createForAdRequest(REWARDED_ID, { requestNonPersonalizedAdsOnly: true });
-
-    const offLoaded = ad.addAdEventListener(RewardedAdEventType.LOADED, async () => {
-      try {
-        await ad.show();
-      } catch {
-        revealHint();
-      }
-    });
-
-    const offReward = ad.addAdEventListener(RewardedAdEventType.EARNED_REWARD, async () => {
+    // Attach temporary listeners just for this show cycle
+    const offReward = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, async () => {
       revealHint();
       const uid = auth.currentUser?.uid;
       if (uid) processReward(uid, 'hint', 1).catch(() => {});
     });
 
-    const offClosed = ad.addAdEventListener(RewardedAdEventType.CLOSED, () => {
-      offLoaded(); offReward(); offClosed();
+    const cleanup = () => {
+      offReward();
+      offClosed();
+      // Warm up the next ad
+      rewardedLoaded = false;
+      rewarded.load();
+    };
+
+    const offClosed = rewarded.addAdEventListener(RewardedAdEventType.CLOSED, () => {
+      cleanup();
     });
 
-    ad.load();
+    try {
+      if (rewardedLoaded) {
+        rewarded.show().catch(() => {
+          // If showing fails (rare), still provide the hint so UX isn’t blocked
+          cleanup();
+          revealHint();
+        });
+      } else {
+        // Not loaded yet – start (re)loading. User can tap again when ready.
+        rewarded.load();
+        Alert.alert('One sec…', 'Loading a short ad to unlock a hint.');
+        // Optional: fallback if ad fails to load within a few seconds could be added here
+      }
+    } catch {
+      cleanup();
+      revealHint();
+    }
   };
 
   const handleAnswerSelect = async (answer: string) => {
     if (!puzzle || locked) return;
-    setLocked(true);                // one attempt only
+    setLocked(true); // one attempt only
     setSelectedAnswer(answer);
 
     if (answer === puzzle.correctAnswer) {
-      Alert.alert('Correct! 🎉', 'You earned 100 points!');
+      Alert.alert('Correct!', 'You earned 100 points!');
       const uid = auth.currentUser?.uid;
       if (uid) {
-        try { await submitPuzzleScore(uid, 100, 0); } catch (e) { console.log('submitPuzzleScore error', e); }
+        try {
+          await submitPuzzleScore(uid, 100, 0);
+        } catch (e) {
+          console.log('submitPuzzleScore error', e);
+        }
       }
     } else {
       Alert.alert('Almost!', 'Try watching a short ad to get a hint.', [
@@ -91,7 +132,7 @@ export default function PuzzlePage() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>🧩 Daily Puzzle</Text>
+        <Text style={styles.title}> Daily Puzzle</Text>
         {/* Always go Home to avoid odd back stacks */}
         <TouchableOpacity onPress={() => router.replace('/')} style={styles.backButton}>
           <Text style={styles.backText}>← Home</Text>
@@ -110,7 +151,7 @@ export default function PuzzlePage() {
               style={[styles.answerButton, { backgroundColor: locked ? '#2f5f4a' : '#2b945e', marginBottom: 16 }]}
               onPress={handleGetHint}
             >
-              <Text style={styles.answerText}>🎁 Get a Hint (watch ad)</Text>
+              <Text style={styles.answerText}> Get a Hint (watch ad)</Text>
             </TouchableOpacity>
 
             {(puzzle?.answers ?? []).map((answer, idx) =>
